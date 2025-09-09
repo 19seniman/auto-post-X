@@ -25,8 +25,8 @@ const client = new TwitterApi({
   accessSecret,
 });
 
-// Fungsi untuk membaca dan memposting tweet dari file teks
-async function postTweetFromFile() {
+// Fungsi untuk membaca dan memposting tweet dari file teks secara berurutan
+async function postTweetSequentially() {
   try {
     const fileContent = fs.readFileSync('tweet.txt', 'utf-8');
     const tweets = fileContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -35,9 +35,21 @@ async function postTweetFromFile() {
       console.error("Kesalahan: Tidak ada kalimat yang ditemukan di dalam file tweet.txt.");
       return;
     }
+    
+    // Baca indeks terakhir dari file .index
+    let currentIndex = 0;
+    try {
+        const indexContent = fs.readFileSync('.index', 'utf-8');
+        currentIndex = parseInt(indexContent.trim());
+        if (isNaN(currentIndex) || currentIndex < 0 || currentIndex >= tweets.length) {
+            currentIndex = 0; // Atur ulang indeks jika tidak valid
+        }
+    } catch (error) {
+        fs.writeFileSync('.index', '0'); // Buat file .index jika belum ada
+    }
 
-    // Pilih tweet secara acak dari daftar
-    const tweetText = tweets[Math.floor(Math.random() * tweets.length)];
+    // Ambil tweet sesuai indeks
+    const tweetText = tweets[currentIndex];
 
     // Kirim tweet ke Twitter API
     const { data: createdTweet } = await client.v2.tweet(tweetText);
@@ -45,9 +57,14 @@ async function postTweetFromFile() {
     console.log("Tweet berhasil dikirim!");
     console.log(`Teks: "${tweetText}"`);
     console.log(`ID Tweet: ${createdTweet.id}`);
+
+    // Perbarui indeks untuk postingan berikutnya
+    const nextIndex = (currentIndex + 1) % tweets.length;
+    fs.writeFileSync('.index', nextIndex.toString());
+
   } catch (error) {
     if (error.code === 'ENOENT') {
-      console.error("Kesalahan: File 'tweet.txt' tidak ditemukan. Pastikan file tersebut ada di folder yang sama.");
+      console.error("Kesalahan: File 'tweet.txt' atau '.index' tidak ditemukan.");
     } else {
       console.error("Terjadi kesalahan saat memposting tweet:", error);
       if (error.code === 403) {
@@ -57,19 +74,15 @@ async function postTweetFromFile() {
   }
 }
 
-// --- BAGIAN INTI PERUBAHAN ---
-
-// 1. Langsung panggil fungsi saat skrip dijalankan
+// Langsung panggil fungsi saat skrip dijalankan
 console.log('Bot Twitter dimulai. Memposting tweet pertama sekarang...');
-postTweetFromFile();
+postTweetSequentially();
 
-// 2. Jadwalkan untuk posting berikutnya setiap 8 jam
-// Format cron: 'menit jam hari-dalam-bulan bulan hari-dalam-minggu'
-// '0 */8 * * *' berarti pada menit ke-0, setiap 8 jam.
+// Jadwalkan untuk posting berikutnya setiap 8 jam
 console.log('Menunggu jadwal untuk memposting tweet berikutnya setiap 8 jam.');
 cron.schedule('0 */8 * * *', () => {
   console.log(`Menjalankan tugas posting tweet pada ${new Date().toLocaleString()}`);
-  postTweetFromFile();
+  postTweetSequentially();
 }, {
   timezone: "Asia/Jakarta" // Atur zona waktu ke WIB (Waktu Indonesia Barat)
 });
