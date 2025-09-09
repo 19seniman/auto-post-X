@@ -1,7 +1,7 @@
 import { TwitterApi } from 'twitter-api-v2';
 import dotenv from 'dotenv';
 import fs from 'fs';
-import readline from 'readline';
+import cron from 'node-cron';
 
 // Muat variabel lingkungan dari file .env
 dotenv.config();
@@ -57,5 +57,13 @@ async function postTweetFromFile() {
   }
 }
 
-// Jalankan fungsi
-postTweetFromFile();
+// Jadwal untuk menjalankan fungsi postTweetFromFile setiap 8 jam
+// Format cron: 'menit jam hari-dalam-bulan bulan hari-dalam-minggu'
+// '0 */8 * * *' berarti pada menit 0, setiap 8 jam.
+console.log('Bot Twitter sedang berjalan. Menunggu jadwal untuk memposting tweet setiap 8 jam.');
+cron.schedule('0 */8 * * *', () => {
+  console.log(`Menjalankan tugas posting tweet pada ${new Date().toLocaleString()}`);
+  postTweetFromFile();
+}, {
+  timezone: "Asia/Jakarta" // Atur zona waktu ke WIB (Waktu Indonesia Barat)
+});
