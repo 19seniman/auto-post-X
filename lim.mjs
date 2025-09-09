@@ -57,10 +57,16 @@ async function postTweetFromFile() {
   }
 }
 
-// Jadwal untuk menjalankan fungsi postTweetFromFile setiap 8 jam
+// --- BAGIAN INTI PERUBAHAN ---
+
+// 1. Langsung panggil fungsi saat skrip dijalankan
+console.log('Bot Twitter dimulai. Memposting tweet pertama sekarang...');
+postTweetFromFile();
+
+// 2. Jadwalkan untuk posting berikutnya setiap 8 jam
 // Format cron: 'menit jam hari-dalam-bulan bulan hari-dalam-minggu'
-// '0 */8 * * *' berarti pada menit 0, setiap 8 jam.
-console.log('Bot Twitter sedang berjalan. Menunggu jadwal untuk memposting tweet setiap 8 jam.');
+// '0 */8 * * *' berarti pada menit ke-0, setiap 8 jam.
+console.log('Menunggu jadwal untuk memposting tweet berikutnya setiap 8 jam.');
 cron.schedule('0 */8 * * *', () => {
   console.log(`Menjalankan tugas posting tweet pada ${new Date().toLocaleString()}`);
   postTweetFromFile();
