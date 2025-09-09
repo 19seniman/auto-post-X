@@ -29,7 +29,11 @@ const client = new TwitterApi({
 async function postTweetSequentially() {
   try {
     const fileContent = fs.readFileSync('tweet.txt', 'utf-8');
-    const tweets = fileContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    // Pisahkan konten berdasarkan tanda '---', trim, dan filter baris kosong
+    const tweets = fileContent
+      .split('---')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
 
     if (tweets.length === 0) {
       console.error("Kesalahan: Tidak ada kalimat yang ditemukan di dalam file tweet.txt.");
